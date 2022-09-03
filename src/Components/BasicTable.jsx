@@ -1,12 +1,15 @@
 import React, { useState, useEffect, Fragment } from "react";
-import { makeStyles } from "@material-ui/core/styles";
 import Checkbox from "@material-ui/core/Checkbox";
-import { CssBaseline } from "@material-ui/core";
-import TablePagination from "@mui/material/TablePagination";
-import SearchBar from "material-ui-search-bar";
-//import SearchBar from "./search";
-import Box from "@mui/material/Box";
+import { Box } from "@mui/system";
+import Pagination from "@mui/material/Pagination";
+import Button from "@mui/material/Button";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ReadOnly from "./ReadOnly";
+import EditRow from "./EditRow";
+import Paper from '@material-ui/core/Paper';
+import "../App.css";
 
+import { makeStyles } from "@material-ui/core/styles";
 import {
   Table,
   TableBody,
@@ -14,159 +17,115 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  TableFooter,
 } from "@material-ui/core";
-import axios from "axios";
-import ReadOnly from "./ReadOnly";
-import EditRow from "./EditRow";
 
 const useStyles = makeStyles((theme) => ({
-  table: {
-    minWidth: 650,
-  },
-  tableContainer: {
+  root: {
     borderRadius: 15,
-    margin: "10px 10px",
+    display: 'flex',
+    overflowX: 'hide',
+  },
+  table: {
+    minWidth: 340,
   },
   tableHeaderCell: {
+    paddingTop: 9,
+    paddingBottom: 9,
+    paddingRight: 2,
+    paddingLeft: 3,
     fontWeight: "bold",
     backgroundColor: theme.palette.primary.dark,
     color: theme.palette.getContrastText(theme.palette.primary.dark),
   },
-  role: {
-    fontWeight: "bold",
-    fontSize: "0.75rem",
-    color: "white",
-    backgroundColor: "grey",
-    borderRadius: 8,
-    padding: "3px 10px",
-    display: "inline-block",
-  },
 }));
 
-const BasicTable = () => {
-  const [userList, setuserList] = useState([]);
-  const [editUserId, setEditUserId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchData, setSearchData] = useState([]);
-  const [page, setPage] = React.useState(0);
-  const [userPerPage, setUserPerPage] = React.useState(10);
+const BasicTable = ({
+  users,
+  editUserId,
+  editUserData,
+  handleEditClick,
+  handleEditUserChange,
+  handleEditFormSubmit,
+  handleCancelClick,
+  handleDeleteClick,
+  checkBoxClicked,
+  handleDeleteButtonClick,
+}) => {
   const classes = useStyles();
-  const [editUserData, setEditUserData] = useState({
-    name: "",
-    email: "",
-    role: "",
-  });
+  const userPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [checkAll, setCheckAll] = useState(false);
+  const [Check, setCheck] = useState(false);
+  const [totalPages, setTotalPages] = useState(
+    Math.ceil(users?.length / userPerPage)
+  );
+  const [newUsers, setNewUsers] = useState(
+    users.slice(
+      (currentPage - 1) * userPerPage,
+      (currentPage - 1) * userPerPage + userPerPage
+    )
+  );
 
-  const getUsers = async () => {
-    try {
-      let res = await axios.get(
-        "https://geektrust.s3-ap-southeast-1.amazonaws.com/adminui-problem/members.json"
-      );
-      setuserList(res.data);
-      setSearchData(res.data);
-      console.log(res.data);
-      return res.data;
-    } catch (err) {
-      console.log(err);
-    }
+  const perPageData = () => {
+    const start = (currentPage - 1) * userPerPage;
+    const final = start + userPerPage;
+    setNewUsers(users.slice(start, final));
   };
 
   useEffect(() => {
-    getUsers();
-  }, []);
+    perPageData();
+  }, [users, currentPage]);
 
-  const handleEditClick = (e, user) => {
-    e.preventDefault();
-    setEditUserId(user.id);
-
-    const formvalues = {
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
-
-    setEditUserData(formvalues);
-  };
-
-  const handleEditUserChange = (e) => {
-    e.preventDefault();
-    const fieldName = e.target.getAttribute("name");
-    const fieldValue = e.target.value;
-
-    const newFormData = { ...editUserData };
-    newFormData[fieldName] = fieldValue.toLowerCase();
-
-    setEditUserData(newFormData);
-  };
-
-  const handleEditFormSubmit = (e) => {
-    e.preventDefault();
-    const editedUser = {
-      id: editUserId,
-      name: editUserData.name,
-      email: editUserData.email,
-      role: editUserData.role,
-    };
-    const newUsers = [...userList];
-    const index = userList.findIndex((user) => user.id === editUserId);
-
-    newUsers[index] = editedUser;
-    setuserList(newUsers);
-    setSearchData(newUsers);
-    setEditUserId(null);
-  };
-
-  const handleCancelClick = () => {
-    setEditUserId(null);
-  };
-
-  const handleDeleteClick = (userid) => {
-    const deleteUser = [...userList];
-    const index = userList.findIndex((user) => user.id === userid);
-
-    deleteUser.splice(index, 1);
-
-    setuserList(deleteUser);
-    setSearchData(deleteUser);
-  };
-
-  const handleSearch = (searchValue) => {
-    if (searchValue == "") {
-      setuserList(searchData);
-    } else {
-      const filterResult = searchData.filter((user) =>
-        user.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchValue.toLowerCase()) ||
-        user.role.toLowerCase().includes(searchValue.toLowerCase()))
-      setuserList(filterResult);
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages !== 0) {
+      setCurrentPage(totalPages);
     }
-    setSearchTerm(searchValue);
+  }, [users?.length, totalPages, currentPage]);
+
+  useEffect(() => {
+    setTotalPages(Math.ceil(users?.length / userPerPage));
+    setCheck(
+      users.reduce((i, user) => {
+        return i || user.isChecked;
+      }, false)
+    );
+  }, [users]);
+
+  useEffect(() => {
+    setCheckAll(
+      newUsers.reduce((i, user) => {
+        return i && user.isChecked;
+      }, true)
+    );
+  }, [currentPage, users, newUsers]);
+
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
   };
 
-  const cancelSearch = () => {
-    setSearchTerm("");
-    setuserList(searchData);
+  const rowCheckBoxClick = (e, id) => {
+    checkBoxClicked(id);
+  };
+
+  const allRowsCheckBoxClick = (event) => {
+    if (event.target.checked)
+      newUsers?.map((user) => !user.isChecked && checkBoxClicked(user.id));
+    else newUsers?.map((user) => user.isChecked && checkBoxClicked(user.id));
   };
 
   return (
-    <div className="container-sm">
-      <Box>
-        <SearchBar
-          placeholder="Search by name, email or role"
-          value={searchTerm}
-          onChange={(searchValue) => handleSearch(searchValue)}
-          onCancelSearch={() => cancelSearch()}
-        />
-      </Box>
-      <form onSubmit={handleEditFormSubmit}>
-        <TableContainer component={Paper} className={classes.tableContainer}>
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
+    <div>
+      <div className={classes.root}>
+        {users.length && (
+          <Table className={classes.table}>
             <TableHead>
               <TableRow>
                 <TableCell className={classes.tableHeaderCell}>
-                  <Checkbox />
+                  <Checkbox
+                    checked={Check ? (checkAll ? true : false) : false}
+                    onChange={(e) => allRowsCheckBoxClick(e)}
+                    color="secondary"
+                  />
                 </TableCell>
                 <TableCell className={classes.tableHeaderCell}>Name</TableCell>
                 <TableCell className={classes.tableHeaderCell}>Email</TableCell>
@@ -177,57 +136,66 @@ const BasicTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {userList.map((user) => (
+              {newUsers.map((user) => (
                 <Fragment>
                   {editUserId === user.id ? (
                     <EditRow
-                      handleCancelClick={handleCancelClick}
-                      handleEditUserChange={handleEditUserChange}
+                      key={user.id}
+                      user={user}
                       editUserData={editUserData}
+                      handleEditUserChange={handleEditUserChange}
+                      handleEditFormSubmit={handleEditFormSubmit}
+                      handleCancelClick={handleCancelClick}
+                      rowCheckBoxClick={rowCheckBoxClick}
                     />
                   ) : (
                     <ReadOnly
+                      key={user.id}
                       user={user}
                       handleEditClick={handleEditClick}
                       handleDeleteClick={handleDeleteClick}
+                      rowCheckBoxClick={rowCheckBoxClick}
                     />
                   )}
                 </Fragment>
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
-        <CssBaseline />
-      </form>
+        )}
+      </div>
+      <Box 
+      className="footer"
+        mt={2}
+        mb={2} 
+        display="flex"
+        alignItems="center"
+        justifyContent="space-around"
+       
+      >
+        <Button
+          className="del-btn"
+          disabled={!Check ? true : false}
+          variant="contained"
+          onClick={handleDeleteButtonClick}
+          startIcon={<DeleteIcon />}
+         
+        >
+          Delete Selected
+        </Button>
+        {totalPages > 1 && (
+          <Pagination
+            color="secondary"
+            onChange={handlePageChange}
+            page={currentPage}
+            shape="circular"
+            count={totalPages}
+            showFirstButton
+            showLastButton
+          />
+        )}
+      </Box>
     </div>
   );
 };
 
 export default BasicTable;
-
-/*<TablePagination
-.slice(page * userPerPage, page * userPerPage + userPerPage)
-rowsPerPageOptions={[10, 25, 100]}
-component="div"
-count={userList.length}
-rowsPerPage={userPerPage}
-page={page}
-onPageChange={handleChangePage}
-onRowsPerPageChange={handleChangeRowsPerPage}
- const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setUserPerPage(+event.target.value);
-    setPage(0);
-  };
-/>
- <SearchBar
-          //placeholder="Search by name, email or role"
-          value={searched}
-          onChange={(searchValue) => handleSearch(searchValue)}
-          onCancelSearch={(e) => cancelSearch(e.target.value)}
-        />
-       onCancelSearch={() => cancelSearch()}
-*/

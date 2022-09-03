@@ -9,6 +9,12 @@ import { makeStyles } from "@material-ui/core/styles";
 import Button from "@mui/material/Button";
 
 const useStyles = makeStyles((theme) => ({
+  tableCell:{
+    paddingTop: 5,
+    paddingBottom: 5,
+    paddingRight: 2,
+    paddingLeft: 3,
+  },
   role: {
     fontWeight: "bold",
     fontSize: "0.75rem",
@@ -18,25 +24,41 @@ const useStyles = makeStyles((theme) => ({
     padding: "3px 10px",
     display: "inline-block",
   },
+  onCheckbackgroundColor: {
+    backgroundColor: "lightgrey",
+  },
 }));
 
-const EditRow = ({ editUserData, handleEditUserChange, handleCancelClick }) => {
-    const classes = useStyles();
+const EditRow = ({
+  user,
+  editUserData,
+  handleEditUserChange,
+  handleEditFormSubmit,
+  handleCancelClick,
+  rowCheckBoxClick,
+}) => {
+  const classes = useStyles();
+
   return (
     <TableRow
-      key={editUserData.id}
+      key={user.id}
+      className={user.isChecked ? classes.onCheckbackgroundColor : null}
       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
     >
-      <TableCell>
-        <Checkbox />
+      <TableCell className={classes.tableCell}>
+        <Checkbox
+          checked={user.isChecked ? true : false}
+          onChange={(e) => rowCheckBoxClick(e, user.id)}
+          color="secondary"
+        />
       </TableCell>
-      <TableCell>
+      <TableCell className={classes.tableCell}>
         <TextField
           label="name"
           value={editUserData.name}
           onChange={handleEditUserChange}
           id="name"
-          required="required"
+          required
           variant="outlined"
           title="name"
           name="name"
@@ -44,14 +66,13 @@ const EditRow = ({ editUserData, handleEditUserChange, handleCancelClick }) => {
           fullWidth
         />
       </TableCell>
-      <TableCell>
-        {" "}
+      <TableCell className={classes.tableCell}>
         <TextField
           label="email"
           value={editUserData.email}
           onChange={handleEditUserChange}
           id="email"
-          required="required"
+          required
           variant="outlined"
           title="email"
           name="email"
@@ -59,24 +80,24 @@ const EditRow = ({ editUserData, handleEditUserChange, handleCancelClick }) => {
           fullWidth
         />
       </TableCell>
-      <TableCell>
-          <TextField
-            label="role"
-            value={editUserData.role}
-            onChange={handleEditUserChange}
-            id="role"
-            required="required"
-            variant="outlined"
-            title="role"
-            name="role"
-            placeholder="Add a role"
-            fullWidth
-          />
+      <TableCell className={classes.tableCell}>
+        <TextField
+          label="role"
+          value={editUserData.role}
+          onChange={handleEditUserChange}
+          id="role"
+          required
+          variant="outlined"
+          title="role"
+          name="role"
+          placeholder="Add a role"
+          fullWidth
+        />
       </TableCell>
-      <TableCell>
+      <TableCell className={classes.tableCell}>
         <Box>
           <Stack direction="row">
-            <Button type="submit">
+            <Button type="submit" onClick={handleEditFormSubmit}>
               <SaveRoundedIcon />
             </Button>
             <Button type="button" onClick={handleCancelClick}>
@@ -90,3 +111,8 @@ const EditRow = ({ editUserData, handleEditUserChange, handleCancelClick }) => {
 };
 
 export default EditRow;
+
+/* 
+
+
+*/
